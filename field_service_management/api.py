@@ -79,16 +79,24 @@ def get_maintenance():
         },
         fields="name"
     )
-    # maintenance_visits = []
-    # for visit in maintenance_visits_:
-    #     maintenance_visit_doc = frappe.get_doc("Maintenance Visit", visit.name)
-    #     maintenance_visits.append(maintenance_visit_doc.as_dict())
-    # return maintenance_visits
-
-
+   
     visits_with_details = []
     for visit in maintenance_visits:
         visit_doc = frappe.get_doc("Maintenance Visit", visit.name)
+
+        #visit-start-time
+        latest_visit_start = frappe.db.get_value(
+            "Visit Start Maintenance",
+            {
+                "parent": visit.name,
+                "technician": user,
+            },
+            "visit_start_at",
+            order_by="visit_start_at DESC"
+        )
+        visit_doc.update({
+            "visit_start": latest_visit_start if latest_visit_start else "",
+        })
 
         #start-end time
         assigned_task = frappe.get_all(
@@ -100,10 +108,34 @@ def get_maintenance():
             order_by='creation desc',
             fields=['*']
         )
-        visit_doc.update({
-            "mntc_time": assigned_task[0].stime if assigned_task else "",
-            "mntc_date": assigned_task[0].etime if assigned_task else "",
-        })
+        visit_data = visit_doc.as_dict()
+        visit_data['start_time'] = assigned_task[0].stime if assigned_task else ""
+        visit_data['end_time'] = assigned_task[0].etime if assigned_task else ""
+
+
+        #punch-in-punch-out
+        latest_punch_in = frappe.db.get_value(
+            "Punch In Punch Out",
+            {
+                "parent": visit.name,
+                "technician": user,
+                "punch_in": ["is", "set"]
+            },
+            "punch_in",
+            order_by="punch_in DESC"
+        )
+        latest_punch_out = frappe.db.get_value(
+            "Punch In Punch Out",
+            {
+                "parent": visit.name,
+                "technician": user,
+                "punch_out": ["is", "set"]
+            },
+            "punch_out",
+            order_by="punch_out DESC"
+        )
+        visit_data["latest_punch_in"] = latest_punch_in if latest_punch_in else ""
+        visit_data["latest_punch_out"] = latest_punch_out if latest_punch_out else ""
 
 
         #geolocation
@@ -128,7 +160,7 @@ def get_maintenance():
 
         # Parse geolocation and assign it to the visit_doc
         geolocation = json.loads(geolocation)
-        visit_doc.geolocation = geolocation
+        visit_data["geolocation"] = geolocation
         
         # Initialize a new dictionary for checktree_description
         checktree_description = {}
@@ -147,7 +179,6 @@ def get_maintenance():
             symptoms_table[item_code].append(item.as_dict())
         
         # Create a dictionary for the current visit, including the reformatted child tables
-        visit_data = visit_doc.as_dict()
         visit_data['checktree_description'] = checktree_description
         visit_data['symptoms_table'] = symptoms_table
         
@@ -351,7 +382,75 @@ def update_punch_in_out(maintenance_visit, punch_in=None, punch_out=None, visit_
 
 @frappe.whitelist(allow_guest=True)
 def get_maintenance_(name = None):
+
+    authorization_header = frappe.get_request_header("Authorization")
+    if not authorization_header:
+        return { "status": "error", "message": "Missing Authorization header"}
+    api_key = frappe.get_request_header("Authorization").split(" ")[1].split(":")[0]
+    # Find the user associated with the API key
+    user = frappe.db.get_value("User", {"api_key": api_key}, "name")
+    
+    if not user:
+        return {"status": "failed", "message": "Invalid API key"}
+    
     visit_doc = frappe.get_doc("Maintenance Visit", name)
+
+    #visit-start-time
+    latest_visit_start = frappe.db.get_value(
+        "Visit Start Maintenance",
+        {
+            "parent": name,
+            "technician": user,
+        },
+        "visit_start_at",
+        order_by="visit_start_at DESC"
+    )
+    visit_doc.update({
+        "visit_start": latest_visit_start if latest_visit_start else "",
+    })
+
+
+    #start-end time
+    assigned_task = frappe.get_all(
+        "Assigned Tasks",
+        filters={
+            "technician": user, "status": "Pending", "issue_code": name
+        },
+        limit_page_length=1,
+        order_by='creation desc',
+        fields=['*']
+    )
+
+    
+
+    visit_data = visit_doc.as_dict()
+    visit_data["start_time"] = assigned_task[0].stime if assigned_task else ""
+    visit_data["end_time"] = assigned_task[0].etime if assigned_task else ""
+
+    #punch-in-punch-out
+    latest_punch_in = frappe.db.get_value(
+        "Punch In Punch Out",
+        {
+            "parent": name,
+            "technician": user,
+            "punch_in": ["is", "set"],
+            "completed": 'no'
+        },
+        "punch_in",
+        order_by="punch_in DESC"
+    )
+    latest_punch_out = frappe.db.get_value(
+        "Punch In Punch Out",
+        {
+            "parent": name,
+            "technician": user,
+            "punch_out": ["is", "set"]
+        },
+        "punch_out",
+        order_by="punch_out DESC"
+    )
+    visit_data["latest_punch_in"] = latest_punch_in if latest_punch_in else ""
+    visit_data["latest_punch_out"] = latest_punch_out if latest_punch_out else ""
 
     #geolocation
     delivery_note_name = frappe.get_value(
@@ -370,7 +469,7 @@ def get_maintenance_(name = None):
         frappe.throw(f"No geolocation found for address: {address.name}")
     # Parse geolocation and assign it to the visit_doc
     geolocation = json.loads(geolocation)
-    visit_doc.geolocation = geolocation
+    visit_data["geolocation"] = geolocation
     
     # Initialize a new dictionary for checktree_description
     checktree_description = {}
@@ -389,11 +488,11 @@ def get_maintenance_(name = None):
         symptoms_table[item_code].append(item.as_dict())
     
     # Create a dictionary for the current visit, including the reformatted child tables
-    visit_data = visit_doc.as_dict()
     visit_data['checktree_description'] = checktree_description
     visit_data['symptoms_table'] = symptoms_table
 
     return visit_data
+
 
 @frappe.whitelist(allow_guest=True)
 def update_checktree(status, name):
