@@ -141,12 +141,12 @@ def get_maintenance():
         #geolocation
         delivery_note_name = frappe.get_value(
             "Delivery Note",
-            {"shipping_address": visit_doc.delivery_address},
+            {"shipping_address": visit_doc.delivery_addres},
             "name"  # Fetch the name of the Delivery Note
         )
 
         if not delivery_note_name:
-            frappe.throw(f"No Delivery Note found for address: {visit_doc.delivery_address}")
+            frappe.throw(f"No Delivery Note found for address: {visit_doc.delivery_addres}")
 
         # Get the full Delivery Note document
         delivery_note = frappe.get_doc("Delivery Note", delivery_note_name)
@@ -455,11 +455,11 @@ def get_maintenance_(name = None):
     #geolocation
     delivery_note_name = frappe.get_value(
         "Delivery Note",
-        {"shipping_address": visit_doc.delivery_address},
+        {"shipping_address": visit_doc.delivery_addres},
         "name"  # Fetch the name of the Delivery Note
     )
     if not delivery_note_name:
-        frappe.throw(f"No Delivery Note found for address: {visit_doc.delivery_address}")
+        frappe.throw(f"No Delivery Note found for address: {visit_doc.delivery_addres}")
     # Get the full Delivery Note document
     delivery_note = frappe.get_doc("Delivery Note", delivery_note_name)
     # Get the associated Address document
