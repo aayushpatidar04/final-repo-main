@@ -494,7 +494,7 @@ def get_live_locations():
         })
     
     maintenance_records = frappe.db.sql("""
-        SELECT name, address_html, delivery_address
+        SELECT name, address_html, delivery_addres
         FROM `tabMaintenance Visit`
         WHERE completion_status != 'Fully Completed'
     """, as_dict=True)
@@ -506,11 +506,11 @@ def get_live_locations():
         #geolocation
         delivery_note_name = frappe.get_value(
             "Delivery Note",
-            {"shipping_address": visit_doc.delivery_address},
+            {"shipping_address": visit_doc.delivery_addres},
             "name"  # Fetch the name of the Delivery Note
         )
         if not delivery_note_name:
-            frappe.throw(f"No Delivery Note found for address: {visit_doc.delivery_address}")
+            frappe.throw(f"No Delivery Note found for address: {visit_doc.delivery_addres}")
         delivery_note = frappe.get_doc("Delivery Note", delivery_note_name)
         address = frappe.get_doc("Address", delivery_note.shipping_address_name)
         geolocation = address.geolocation
