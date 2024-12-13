@@ -131,7 +131,7 @@ frappe.pages['schedule-board-yeste'].on_page_load = function(wrapper) {
 
 						// Add technician markers
 						const greenIcon = L.icon({
-							iconUrl: '/private/files/green-marker51773a.png',
+							iconUrl: '/files/green-marker51773a.png',
 							iconSize: [25, 41],
 							iconAnchor: [12, 41],
 							popupAnchor: [1, -34]
@@ -171,7 +171,7 @@ frappe.pages['schedule-board-yeste'].on_page_load = function(wrapper) {
 
 			// Define custom icons for technicians and maintenance visits
 			const technicianIcon = L.icon({
-				iconUrl: '/private/files/green-marker51773a.png',
+				iconUrl: '/files/green-marker51773a.png',
 				iconSize: [25, 41],
 				iconAnchor: [12, 41],
 				popupAnchor: [1, -34]
