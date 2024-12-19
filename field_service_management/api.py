@@ -373,7 +373,13 @@ def update_punch_in_out(maintenance_visit, punch_in=None, punch_out=None, visit_
             frappe.db.commit()
             status_msg = "Punch-out recorded"
             if is_completed == 'yes':
-                status_msg += " and visit marked as completed"
+                status_msg += " and visit marked as Approval Pending"
+                frappe.db.sql(
+                """
+                    UPDATE `tabMaintenance Visit` SET `completion_status` = %s WHERE name = %s
+                """,
+                    ('Approval Pending', maintenance_visit),
+                )
             return {"status": "success", "message": status_msg}
         else:
             frappe.throw("No active punch-in record found to update.")

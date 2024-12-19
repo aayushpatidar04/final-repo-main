@@ -53,7 +53,7 @@ def get_items_for_address(doctype, txt, searchfield, start, page_len, filters):
 
     # Return the items in the expected format (value and description)
     return [
-        (item["item_code"], item)  # Passing the whole item object
+        (item["item_code"], f"<b>{item['item_name']}</b> | {item.get('serial_no', 'None')} | {item['parent']}")  # Passing the whole item object
         for item in items
     ]
 
