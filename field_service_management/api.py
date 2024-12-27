@@ -372,14 +372,13 @@ def update_punch_in_out(maintenance_visit, punch_in=None, punch_out=None, visit_
             existing_record.save(ignore_permissions=True)
             frappe.db.commit()
             status_msg = "Punch-out recorded"
-            if is_completed == 'yes':
-                status_msg += " and visit marked as Approval Pending"
-                frappe.db.sql(
-                """
-                    UPDATE `tabMaintenance Visit` SET `completion_status` = %s WHERE name = %s
-                """,
-                    ('Approval Pending', maintenance_visit),
-                )
+            status_msg += " and visit marked as Approval Pending"
+            frappe.db.sql(
+            """
+                UPDATE `tabMaintenance Visit` SET `completion_status` = %s WHERE name = %s
+            """,
+                ('Approval Pending', maintenance_visit),
+            )
             return {"status": "success", "message": status_msg}
         else:
             frappe.throw("No active punch-in record found to update.")
@@ -795,6 +794,109 @@ def add_reschedule_requests(maintenance_visit, type, reason, date, hours):
     reschedule_request.insert(ignore_permissions=True)
     frappe.db.commit()
     return {"status": "success", "message": "Reschedule Request submitted successfully!"}
+
+@frappe.whitelist(allow_guest=True)
+def update_shipping_address():
+    # Get all rows with a valid delivery_document_no
+    records = frappe.get_all(
+        'Serial No',
+        filters={'delivery_document_no': ['is', 'set']},
+        fields=['name', 'delivery_document_no']
+    )
+    updated_count = 0
+    
+    for record in records:
+        # Fetch the shipping_address from Delivery Note
+        
+        shipping_address_name = frappe.db.get_value(
+            'Delivery Note',
+            record.delivery_document_no,
+            'shipping_address_name'
+        )
+        address = frappe.db.get_value(
+            "Address",
+            shipping_address_name,
+            ["address_line1", "address_line2", "ward_name", "district", "town", "province", "country", "phone", "fax"],
+            as_dict=True
+        )
+
+        if not address:
+            shipping_address = None
+        else:
+        # Construct the address in the desired format
+            address_string = f"{address['address_line1']}<br>"
+            
+            if address['address_line2']:
+                address_string += f"{address['address_line2']}<br>"
+            
+            if address['ward_name']:
+                address_string += f"{address['ward_name']}<br>"
+            
+            if address['district']:
+                address_string += f"{address['district']}<br>"
+            
+            address_string += f"{address['town']}<br>"
+            
+            if address['province']:
+                address_string += f"{address['province']}<br>"
+            
+            address_string += f"{address['country']}<br>"
+            
+            if address['phone']:
+                address_string += f"Phone: {address['phone']}<br>"
+            
+            if address['fax']:
+                address_string += f"Fax: {address['fax']}<br>"
+            
+            shipping_address = address_string
+    
+        if shipping_address:
+            # Update the shipping_address field in your Doctype
+            frappe.db.set_value('Serial No', record.name, 'custom_item_current_installation_address', shipping_address)
+            frappe.db.set_value('Serial No', record.name, 'custom_item_current_installation_address_name', shipping_address_name)
+            frappe.db.commit()
+            updated_count += 1
+    
+    return {"message": f"{updated_count} rows updated successfully."}
+
+@frappe.whitelist(allow_guest=True)
+def populate_initial_serial_card_history():
+    
+    serial_cards = frappe.get_all('Serial No', fields=['name', 'customer', 'custom_item_current_installation_address_name'])
+    updated_count = 0
+
+    for serial_card in serial_cards:
+        # Check if there is already an entry in the Serial Card History for this Serial Card
+        existing_history = frappe.get_all(
+            'Serial Card History',
+            filters={
+                'parent': serial_card.name,
+                'parentfield': 'custom_serial_card_history',
+                'parenttype': 'Serial No'
+            },
+            fields=['name']
+        )
+        
+        if not existing_history:
+            frappe.db.sql("""
+                INSERT INTO `tabSerial Card History`
+                (name, parent, parentfield, parenttype, customer, address, serial_no)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (
+                frappe.generate_hash("Serial Card History", 10),  # Generate unique name
+                serial_card.name,  # Parent Serial No
+                'custom_serial_card_history',  # Parent field
+                'Serial No',  # Parent type
+                serial_card.customer,  # Customer
+                serial_card.custom_item_current_installation_address_name,  # Address
+                serial_card.name  # Serial No
+            ))
+            frappe.db.commit()
+            updated_count += 1
+
+    return {
+        "message": f"{updated_count} Serial No records updated successfully."
+    }
 
 
 
