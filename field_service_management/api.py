@@ -140,19 +140,13 @@ def get_maintenance():
 
         #geolocation
         delivery_note_name = frappe.get_value(
-            "Delivery Note",
-            {"shipping_address": visit_doc.delivery_addres},
-            "name"  # Fetch the name of the Delivery Note
+            "Serial No",
+            {"custom_item_current_installation_address": visit_doc.delivery_address},
+            "custom_item_current_installation_address_name"
         )
-
         if not delivery_note_name:
-            frappe.throw(f"No Delivery Note found for address: {visit_doc.delivery_addres}")
-
-        # Get the full Delivery Note document
-        delivery_note = frappe.get_doc("Delivery Note", delivery_note_name)
-
-        # Get the associated Address document
-        address = frappe.get_doc("Address", delivery_note.shipping_address_name)
+            frappe.throw(f"No Serial No found for address: {visit_doc.delivery_address}")
+        address = frappe.get_doc("Address", delivery_note_name)
         geolocation = address.geolocation
 
         if not geolocation:
@@ -459,16 +453,13 @@ def get_maintenance_(name = None):
 
     #geolocation
     delivery_note_name = frappe.get_value(
-        "Delivery Note",
-        {"shipping_address": visit_doc.delivery_addres},
-        "name"  # Fetch the name of the Delivery Note
+        "Serial No",
+        {"custom_item_current_installation_address": visit_doc.delivery_address},
+        "custom_item_current_installation_address_name"
     )
     if not delivery_note_name:
-        frappe.throw(f"No Delivery Note found for address: {visit_doc.delivery_addres}")
-    # Get the full Delivery Note document
-    delivery_note = frappe.get_doc("Delivery Note", delivery_note_name)
-    # Get the associated Address document
-    address = frappe.get_doc("Address", delivery_note.shipping_address_name)
+        frappe.throw(f"No Serial No found for address: {visit_doc.delivery_address}")
+    address = frappe.get_doc("Address", delivery_note_name)
     geolocation = address.geolocation
     if not geolocation:
         frappe.throw(f"No geolocation found for address: {address.name}")
