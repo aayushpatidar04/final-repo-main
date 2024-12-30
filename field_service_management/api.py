@@ -141,11 +141,11 @@ def get_maintenance():
         #geolocation
         delivery_note_name = frappe.get_value(
             "Serial No",
-            {"custom_item_current_installation_address": visit_doc.delivery_address},
+            {"custom_item_current_installation_address": visit_doc.delivery_addres},
             "custom_item_current_installation_address_name"
         )
         if not delivery_note_name:
-            frappe.throw(f"No Serial No found for address: {visit_doc.delivery_address}")
+            frappe.throw(f"No Serial No found for address: {visit_doc.delivery_addres}")
         address = frappe.get_doc("Address", delivery_note_name)
         geolocation = address.geolocation
 
@@ -454,11 +454,11 @@ def get_maintenance_(name = None):
     #geolocation
     delivery_note_name = frappe.get_value(
         "Serial No",
-        {"custom_item_current_installation_address": visit_doc.delivery_address},
+        {"custom_item_current_installation_address": visit_doc.delivery_addres},
         "custom_item_current_installation_address_name"
     )
     if not delivery_note_name:
-        frappe.throw(f"No Serial No found for address: {visit_doc.delivery_address}")
+        frappe.throw(f"No Serial No found for address: {visit_doc.delivery_addres}")
     address = frappe.get_doc("Address", delivery_note_name)
     geolocation = address.geolocation
     if not geolocation:

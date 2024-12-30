@@ -484,7 +484,7 @@ def get_live_locations():
         })
     
     maintenance_records = frappe.db.sql("""
-        SELECT name, delivery_address, customer, maintenance_type, completion_status
+        SELECT name, delivery_addres, customer, maintenance_type, completion_status
         FROM `tabMaintenance Visit`
         WHERE completion_status != 'Fully Completed'
     """, as_dict=True)
@@ -496,11 +496,11 @@ def get_live_locations():
         #geolocation
         delivery_note_name = frappe.get_value(
             "Serial No",
-            {"custom_item_current_installation_address": visit_doc.delivery_address},
+            {"custom_item_current_installation_address": visit_doc.delivery_addres},
             "custom_item_current_installation_address_name"
         )
         if not delivery_note_name:
-            frappe.throw(f"No Serial No found for address: {visit_doc.delivery_address}")
+            frappe.throw(f"No Serial No found for address: {visit_doc.delivery_addres}")
         address = frappe.get_doc("Address", delivery_note_name)
         geolocation = address.geolocation
         geolocation = json.loads(geolocation)
@@ -508,7 +508,7 @@ def get_live_locations():
         maintenance_visits.append({
             "visit_id": visit.name,
             "geolocation": geolocation,
-            "address": visit.delivery_address,
+            "address": visit.delivery_addres,
             "customer": visit.customer,
             "type": visit.maintenance_type,
             "status": visit.completion_status
