@@ -317,6 +317,16 @@ frappe.pages['schedule-board-next7'].on_page_load = function(wrapper) {
 		});
 
 		setTimeout(function () {
+
+			var scrollableSections = $(".scrollable-x");
+			$(".scrollable-x").on("scroll", function () {
+				var scrollLeft = $(this).scrollLeft();
+				scrollableSections.each(function () {
+					if ($(this).scrollLeft() !== scrollLeft) {
+						$(this).scrollLeft(scrollLeft);
+					}
+				});
+			});
 			
 			$(document).on('dragstart', '.drag', function (event) {
 				const draggable = $(this);

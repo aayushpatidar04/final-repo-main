@@ -193,10 +193,48 @@ def get_context(context=None):
         total_hours = 0
         for date in dates:
             tss = tasks_by_date[date]
-            count = 0
+            query = """
+                SELECT 
+                    description, 
+                    half_day, 
+                    from_date, 
+                    to_date, 
+                    select_half_day
+                FROM 
+                    tabLeave Application
+                WHERE 
+                    employee_name = %(employee_name)s
+                    AND status = 'Approved'
+                    AND from_date <= %(date)s
+                    AND to_date >= %(date)s;
+            """
+            leaves = frappe.db.sql(query, {"employee_name": tech.full_name, "date": date}, as_dict=True)
+            if(leaves):
+                for leave in leaves:
+                    if (leave.half_day == 1):
+                        if (leave.select_half_day == 'Morning'):
+                            count = 6
+                            html_content += f'<div style="width: 150px; border-right: 1px solid #000; color: white; background-color: red;" data-tech="{tech.email}" class="px-1">{leave.description}</div>'
+                        else:
+                            afternoon = 1
+                    else:
+                        count = 12
+                        afternoon = 0
+                        html_content += f'<div style="width: 300px; border-right: 1px solid #000; color: white; background-color: red;" data-tech="{tech.email}" class="px-1">{leave.description}</div>'
+            else:
+                count = 0
+                afternoon = 0
             for slot in time_slots:
+                if slot['label'] == '03' and afternoon == 1:
+                    count += 6
+                    html_content += f'<div style="width: 150px; border-right: 1px solid #000; color: white; background-color: red;" data-tech="{tech.email}" class="px-1">Leave</div>'
                 if slot['label'] == '12':
-                    html_content += f'<div style="width: 25px; border-right: 1px solid #000; color: white; background-color: red;" data-time="{slot["time"]}" data-tech="{tech.email}" class="px-1">Lunch Time</div>'
+                    if(count >= 1):
+                        count -=1
+                    elif(count == 0.5):
+                        html_content += f'<div style="width: 12.5px; border-right: 1px solid #000; color: white; background-color: red;" data-time="{slot["time"]}" data-tech="{tech.email}" class="px-1">Lunch Time</div>'
+                    else:
+                        html_content += f'<div style="width: 25px; border-right: 1px solid #000; color: white; background-color: red;" data-time="{slot["time"]}" data-tech="{tech.email}" class="px-1">Lunch Time</div>'
                 else:
                     not_available = []
                     ts = frappe.get_all(
@@ -513,7 +551,13 @@ def get_live_locations():
             frappe.throw(f"No Serial No found for address: {visit_doc.delivery_addres}")
         address = frappe.get_doc("Address", delivery_note_name)
         geolocation = address.geolocation
-        geolocation = json.loads(geolocation)
+        if geolocation:
+            try:
+                geolocation = json.loads(geolocation)
+            except json.JSONDecodeError:
+                # Handle invalid JSON data, e.g., log an error and set geolocation to None
+                geolocation = None
+                frappe.log_error(f"Invalid geolocation data for address: {address.name}", "Field Service Management")
 
         maintenance_visits.append({
             "visit_id": visit.name,

@@ -255,10 +255,10 @@
                 {{ message }}
                 <br>
                 <br>
-                <div class="row scrollable-x" style="width: 100%; overflow-x: auto; white-space: nowrap;">
+                <div class="row">
                     <div class="col-4 mb-1 text-center"
                         style="border-bottom: 1px solid #000; border-right: 1px solid #000;"><b>Users</b></div>
-                    <div class="col-8 mb-1 d-flex">
+                    <div class="col-8 mb-1 d-flex scrollable-x" style="width: 100%; overflow-x: auto; white-space: nowrap;">
                         {% for date in dates %}
                         <div>
                             <div style="border-right: 1px solid #000; text-align: center;"><u><b>{{ date }}</b></u></div>
@@ -279,7 +279,7 @@
                             <div>{{ item.total_hours}} %</div>
                         </div>
                     </div>
-                    <div class="col-8 mb-1 d-flex" style="align-items: center;">
+                    <div class="col-8 mb-1 d-flex scrollable-x" style="width: 100%; overflow-x: auto; white-space: nowrap; align-items: center;">
                         <div class="d-flex">
                             {{ item.html_content }}
                         </div>

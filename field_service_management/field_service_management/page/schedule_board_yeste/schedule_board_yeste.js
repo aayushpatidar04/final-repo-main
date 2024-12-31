@@ -283,6 +283,16 @@ frappe.pages['schedule-board-yeste'].on_page_load = function(wrapper) {
 		});
 
 		setTimeout(function () {
+
+			var scrollableSections = $(".scrollable-x");
+			$(".scrollable-x").on("scroll", function () {
+				var scrollLeft = $(this).scrollLeft();
+				scrollableSections.each(function () {
+					if ($(this).scrollLeft() !== scrollLeft) {
+						$(this).scrollLeft(scrollLeft);
+					}
+				});
+			});
 			
 			$(document).on('click', '.close', function () {
 				$(this).closest('.modal').removeClass('show').addClass('hide');
