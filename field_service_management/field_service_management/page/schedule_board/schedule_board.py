@@ -409,6 +409,10 @@ def get_live_locations():
 
     technicians = []
     maintenance_visits = []
+
+
+
+
     technician_records = frappe.db.sql("""
         SELECT technician, latitude, longitude, time 
         FROM `tabLive Location` 
@@ -418,6 +422,8 @@ def get_live_locations():
             GROUP BY technician
         )
         """, as_dict=True)
+    
+    
     for tech in technician_records:
         technicians.append({
             "technician": tech.technician,
@@ -425,49 +431,50 @@ def get_live_locations():
             "longitude": tech.longitude
         })
     
-    maintenance_records = frappe.db.sql("""
-        SELECT name, delivery_addres, customer, maintenance_type, completion_status
-        FROM `tabMaintenance Visit`
-        WHERE completion_status != 'Fully Completed'
-    """, as_dict=True)
+    # maintenance_records = frappe.db.sql("""
+    #     SELECT name, delivery_addres, customer, maintenance_type, completion_status
+    #     FROM `tabMaintenance Visit`
+    #     WHERE completion_status != 'Fully Completed'
+    # """, as_dict=True)
     
 
-    for visit in maintenance_records:
-        visit_doc = frappe.get_doc("Maintenance Visit", visit.name)
-        #geolocation
+    # for visit in maintenance_records:
+    #     visit_doc = frappe.get_doc("Maintenance Visit", visit.name)
+    #     #geolocation
         
-        delivery_note_name = frappe.get_value(
-            "Serial No",
-            {"custom_item_current_installation_address": visit_doc.delivery_addres},
-            "custom_item_current_installation_address_name"
-        )
-        if not delivery_note_name:
-            frappe.throw(f"No Serial No found for address: {visit_doc.delivery_addres}")
-        address = frappe.get_doc("Address", delivery_note_name)
-        geolocation = address.geolocation
-        if geolocation:
-            # Check if geolocation is a string that needs to be loaded as JSON
-            if isinstance(geolocation, str):
-                try:
-                    geolocation = json.loads(geolocation)
-                except json.JSONDecodeError:
-                    frappe.log_error(f"Invalid geolocation data for address: {address.name}", "Field Service Management")
-                    geolocation = None
-            elif not isinstance(geolocation, dict):
-                frappe.log_error(f"Unexpected geolocation format for address: {address.name}", "Field Service Management")
-                geolocation = None
+    #     delivery_note_name = frappe.get_value(
+    #         "Serial No",
+    #         {"custom_item_current_installation_address": visit_doc.delivery_addres},
+    #         "custom_item_current_installation_address_name"
+    #     )
+    #     if not delivery_note_name:
+    #         frappe.throw(f"No Serial No found for address: {visit_doc.delivery_addres}")
+    #     address = frappe.get_doc("Address", delivery_note_name)
+    #     geolocation = address.geolocation
+    #     if geolocation:
+    #         # Check if geolocation is a string that needs to be loaded as JSON
+    #         if isinstance(geolocation, str):
+    #             try:
+    #                 geolocation = json.loads(geolocation)
+    #             except json.JSONDecodeError:
+    #                 frappe.log_error(f"Invalid geolocation data for address: {address.name}", "Field Service Management")
+    #                 geolocation = None
+    #         elif not isinstance(geolocation, dict):
+    #             frappe.log_error(f"Unexpected geolocation format for address: {address.name}", "Field Service Management")
+    #             geolocation = None
 
-        maintenance_visits.append({
-            "visit_id": visit.name,
-            "geolocation": geolocation,
-            "address": visit.delivery_addres,
-            "customer": visit.customer,
-            "type": visit.maintenance_type,
-            "status": visit.completion_status
-        })    
+    #     maintenance_visits.append({
+    #         "visit_id": visit.name,
+    #         "geolocation": geolocation,
+    #         "address": visit.delivery_addres,
+    #         "customer": visit.customer,
+    #         "type": visit.maintenance_type,
+    #         "status": visit.completion_status
+    #     })    
+    
     return {
         "technicians": technicians,
-        "maintenance": maintenance_visits
+        # "maintenance": maintenance_visits
     }
 
 
