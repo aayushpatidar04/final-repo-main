@@ -539,13 +539,13 @@ def get_live_locations():
         )
         if not delivery_note_name:
             frappe.throw(f"No Serial No found for address: {visit_doc.delivery_addres}")
-        address = frappe.get_doc("Address", delivery_note_name)
-        geolocation = address.geolocation
-        frappe.log_error(geolocation)
-        if isinstance(geolocation, dict):
-            pass
+        geolocation = frappe.get_all('Address', filters = {'name' : delivery_note_name}, fields = ['geolocation'])
+        # address = frappe.get_doc("Address", delivery_note_name)
+        # geolocation = address.geolocation
+        if geolocation:
+            geolocation = json.loads(geolocation[0].geolocation)
         else:
-            frappe.log_error(f"Invalid geolocation JSON for address: {address.name}", "Field Service Management")
+            frappe.log_error(f"Invalid geolocation JSON for address: {delivery_note_name}", "Field Service Management")
             geolocation = None
 
         maintenance_visits.append({
