@@ -191,7 +191,7 @@ def get_context(context=None):
                 to_date, 
                 select_half_day
             FROM 
-                tabLeave Application
+                `tabLeave Application`
             WHERE 
                 employee_name = %(employee_name)s
                 AND status = 'Approved'
